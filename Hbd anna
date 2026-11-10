@@ -1,0 +1,100 @@
+from pathlib import Path import zipfile, shutil
+root = Path("/mnt/data/kapil-birthday-batman") (root / "src").mkdir(parents=True, exist_ok=True)
+files = { "package.json": r'''{ "name": "kapil-batman-birthday", "private": true, "version": "1.1.0", "type": "module", "scripts": { "dev": "vite", "build": "tsc -b && vite build", "preview": "vite preview" }, "dependencies": { "lucide-react": "^0.468.0", "react": "^18.3.1", "react-dom": "^18.3.1" }, "devDependencies": { "@types/react": "^18.3.12", "@types/react-dom": "^18.3.1", "@vitejs/plugin-react": "^4.3.4", "typescript": "^5.7.2", "vite": "^6.0.5" } }''', "index.html": r'''
+Kapil Anna — The Birthday Knight
+''', "tsconfig.json": r'''{ "compilerOptions": { "target": "ES2020", "useDefineForClassFields": true, "lib": ["ES2020", "DOM", "DOM.Iterable"], "module": "ESNext", "skipLibCheck": true, "moduleResolution": "Bundler", "allowImportingTsExtensions": true, "resolveJsonModule": true, "isolatedModules": true, "noEmit": true, "jsx": "react-jsx", "strict": true }, "include": ["src"] }''', "vite.config.ts": r'''import { defineConfig } from 'vite'; import react from '@vitejs/plugin-react'; export default defineConfig({ plugins: [react()] });''', "src/birthdayConfig.ts": r'''export type BirthdayStage = 'passcode' | 'cake' | 'bouquet' | 'letter' | 'gift';
+export interface KapilBirthdayConfig { seniorName: string; senderName: string; passcode: string; dateLabel: string; customLetterParagraphs: string[]; }
+export const DEFAULT_KAPIL_CONFIG: KapilBirthdayConfig = { seniorName: 'Kapil Anna', senderName: 'Your loving junior, Dharshini', passcode: '1111', dateLabel: '11.11 — The night our very own Batman was born 🦇', customLetterParagraphs: [ 'Happy Birthday, Kapil Anna! ❤️ You are not just a senior but someone who deserves all the happiness in the world.', 'I hope this new chapter of your life brings beautiful memories, unexpected blessings and endless achievements. Stay the same amazing person always. Wishing you a lifetime of happiness!', '11.11 — the day our very own Batman was born! 🌚🦇 While the whole world sleeps peacefully, our Batman wakes up and starts his night shift.', "May your life be filled with happiness, success and unlimited adventures. Keep being the same crazy, funny and wonderful person. Don't forget to take some rest between your Batman missions! 😂", ], };''', "src/main.tsx": r'''import React from 'react'; import ReactDOM from 'react-dom/client'; import App from './App'; import './style.css';
+ReactDOM.createRoot(document.getElementById('root')!).render( <React.StrictMode></React.StrictMode>, );''', "src/App.tsx": r'''import { useState } from 'react'; import { ArrowLeft, ArrowRight, Volume2, VolumeX, Delete, Gift, Heart, Share2, RotateCcw, Trophy, LockKeyhole } from 'lucide-react'; import { DEFAULT_KAPIL_CONFIG, type BirthdayStage } from './birthdayConfig';
+const stages: BirthdayStage[] = ['passcode', 'cake', 'bouquet', 'letter', 'gift'];
+export default function App() { const config = DEFAULT_KAPIL_CONFIG; const [stage, setStage] = useState('passcode'); const [code, setCode] = useState(''); const [error, setError] = useState(''); const [soundOn, setSoundOn] = useState(true); const [wishMade, setWishMade] = useState(false); const [letterOpen, setLetterOpen] = useState(false); const [giftTaps, setGiftTaps] = useState(3); const [revealed, setRevealed] = useState(false);
+const index = stages.indexOf(stage) + 1; const goBack = () => { const previous = stages[Math.max(0, index - 2)]; setStage(previous); }; const addDigit = (digit: string) => { if (code.length < 4) { const next = code + digit; setCode(next); if (next.length === 4) { if (next === config.passcode) { setError(''); window.setTimeout(() => setStage('cake'), 180); } else { setError('Incorrect code. Try again, junior detective!'); window.setTimeout(() => setCode(''), 450); } } } }; const reset = () => { setStage('passcode'); setCode(''); setError(''); setWishMade(false); setLetterOpen(false); setGiftTaps(3); setRevealed(false); }; const tapGift = () => { if (giftTaps > 1) setGiftTaps(giftTaps - 1); else { setGiftTaps(0); setRevealed(true); } }; const share = async () => { const shareData = { title: 'Happy Birthday Kapil Anna!', text: 'A little birthday surprise for our very own Batman!' }; if (navigator.share) await navigator.share(shareData); else if (navigator.clipboard) await navigator.clipboard.writeText(window.location.href); };
+return (      🦇HAPPY BIRTHDAY {config.seniorName.toUpperCase()} <button className="sound-toggle" onClick={() => setSoundOn(!soundOn)} aria-label="Toggle sound"> {soundOn ?  : } SOUND {soundOn ? 'ON' : 'OFF'}  
+  <section className="frame">
+    <div className="frame-inner">
+      {stage !== 'passcode' && (
+        <div className="screen-nav">
+          <button className="back-button" onClick={goBack}><ArrowLeft size={16} /> Back</button>
+          <span className="stage-chip">{stage === 'gift' ? 'FINAL MISSION 🎁' : 'GOTHAM CELEBRATION 🦇'}</span>
+        </div>
+      )}
+
+      {stage === 'passcode' && (
+        <div className="screen pass-screen">
+          <div className="hero-symbol"><span>🦇</span><div className="symbol-ring" /></div>
+          <p className="eyebrow">A SECRET MISSION FOR YOU</p>
+          <h1>ENTER PASSCODE</h1>
+          <p className="subline">Something special is waiting for you, {config.seniorName}.</p>
+          <div className="code-display" aria-label={`${code.length} of 4 digits entered`}>
+            {[0,1,2,3].map(i => <span className={code[i] ? 'filled' : ''} key={i}>{code[i] || '•'}</span>)}
+          </div>
+          <p className="code-count">ENTERED {code.length}/4</p>
+          <div className="keypad">
+            {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => addDigit(String(n))}>{n}</button>)}
+            <span className="key-decoration">✦</span>
+            <button onClick={() => addDigit('0')}>0</button>
+            <button className="delete-key" onClick={() => { setCode(code.slice(0, -1)); setError(''); }} aria-label="Delete last digit"><Delete size={22} /></button>
+          </div>
+          {error && <p className="error-text">{error}</p>}
+          <p className="hint">ENTER YOUR 4-DIGIT SECRET KEY 🔐</p>
+        </div>
+      )}
+
+      {stage === 'cake' && (
+        <div className="screen cake-screen">
+          <p className="eyebrow">MISSION 02 · MAKE A WISH</p>
+          <h1>Blow the candle,<br />{config.seniorName}</h1>
+          <p className="subline">{wishMade ? 'May all your dreams come true this year! ✨' : 'Tap the button to blow out the candle and make a wish!'}</p>
+          <div className={`cake-scene ${wishMade ? 'extinguished' : ''}`}>
+            <div className="candle-flame">✦</div><div className="cake-candle" />
+            <div className="cake-icing" /><div className="cake-body" /><div className="cake-plate" />
+          </div>
+          {wishMade ? (
+            <div className="wish-card"><span>🕯️ 💨</span><h2>Close your eyes & make a wish</h2><p>A special rose bouquet is blooming for you...</p></div>
+          ) : <button className="main-button" onClick={() => setWishMade(true)}>🕯️ Blow the candle</button>}
+          {wishMade && <button className="main-button green-button" onClick={() => setStage('bouquet')}>Wish made! View your rose bouquet 🌹</button>}
+        </div>
+      )}
+
+      {stage === 'bouquet' && (
+        <div className="screen bouquet-screen">
+          <p className="eyebrow">MISSION 03 · A TOKEN OF RESPECT</p>
+          <h1 className="script-title">Your Rose Bouquet <span>🌹</span></h1>
+          <p className="pill-note">With respect & heartfelt gratitude</p>
+          <div className="bouquet-art">
+            <div className="rose-heads">{Array.from({length: 11}, (_,i) => <span key={i}>🌹</span>)}</div>
+            <div className="bouquet-paper" /><div className="bouquet-ribbon">♥</div><div className="stems">╱╲╱</div>
+          </div>
+          <p className="bouquet-caption">“A bouquet of appreciation for our favourite Anna.”</p>
+          <button className="main-button green-button" onClick={() => setStage('letter')}>Open heartfelt letter from Dharshini <ArrowRight size={18} /></button>
+        </div>
+      )}
+
+      {stage === 'letter' && (
+        <div className="screen letter-screen">
+          <p className="eyebrow">MISSION 04 · FROM JUNIOR'S HEART</p>
+          <h1 className="script-title">A Message From My Heart</h1>
+          <p className="subline">{letterOpen ? `Dedicated to my favourite senior, ${config.seniorName}` : 'Tap the envelope to read your letter 💌'}</p>
+          {!letterOpen ? (
+            <>
+              <button className="big-envelope" onClick={() => setLetterOpen(true)} aria-label="Open letter"><span>♥</span><small>TAP TO OPEN LETTER</small></button>
+              <button className="main-button" onClick={() => setLetterOpen(true)}>Tap to open letter 💌</button>
+            </>
+          ) : (
+            <>
+              <article className="letter-paper">
+                <div className="letter-seal">♥</div>
+                {config.customLetterParagraphs.map((p,i) => <p key={i}>{p}</p>)}
+                <p className="signature">With lots of respect and affection,<br /><strong>{config.senderName}</strong></p>
+              </article>
+              <button className="main-button" onClick={() => setStage('gift')}>One last surprise <ArrowRight size={18} /></button>
+            </>
+          )}
+        </div>
+      )}
+
+      {stage === 'gift' && (
+        <div className="screen gift-screen">
+          <p className="eyebrow">MISSION 05 · FINAL SURPRISE</p>
+          <h1 className="script-title">{revealed ? 'The Birthday Knight!' : 'One Last Thing...'}</h1>
+          <p
